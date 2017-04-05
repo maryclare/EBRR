@@ -25,12 +25,12 @@ estRegPars <-function(y, X, delta = 0) {
 
   DXtX <- crossprod(D, XtX)
   XtXDDXtX <- crossprod(DXtX)
-  DXt <- tcrossprod(D, X)
-  XDDXt <- crossprod(DXt)
+  XD <- tcrossprod(X, D)
+  DXtXD <- crossprod(XD)
   AX <- crossprod(A, X)
 
   e.bb <- sum(diag(XtXDDXtX))/p
-  e.be <- sum(diag(XDDXt))/p
+  e.be <- sum(diag(DXtXD))/p
   e.eb <- sum(diag(crossprod(AX)))/n
   e.ee <- sum(diag(crossprod(A)))/n
 
@@ -41,7 +41,7 @@ estRegPars <-function(y, X, delta = 0) {
   sigma.beta.sq.hat <- ifelse(sig.2.ests[1] > 0, sig.2.ests[1], 0)
   sigma.epsi.sq.hat <- ifelse(sig.2.ests[2] > 0, sig.2.ests[2], 0)
 
-  aa <- sum(3*(diag(XtXDDXtX)*sigma.beta.sq.hat + diag(XDDXt)*sigma.epsi.sq.hat)^2/p)
+  aa <- sum(3*(diag(XtXDDXtX)*sigma.beta.sq.hat + diag(DXtXD)*sigma.epsi.sq.hat)^2/p)
   bb <- sum(diag(DXtX^4))/p
   kappa.hat <- (mean(b^4) - aa)/(bb*sigma.beta.sq.hat^2)
 
