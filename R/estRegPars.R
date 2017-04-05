@@ -7,13 +7,15 @@
 #' @param \code{delta} ridge regression parameter for when X is not full rank
 #' @return Estimates \code{sigma.beta.sq.hat}, \code{sigma.epsi.sq.hat} and \code{kappa.hat}
 #' @export
-estRegPars <-function(y, X, delta = 0) {
+estRegPars <-function(y, X, delta = 0, XtX = NULL) {
 
 
   p <- ncol(X)
   n <- nrow(X)
 
-  XtX <- crossprod(X)
+  if (is.null(XtX)) {
+    XtX <- crossprod(X)
+  }
 
   full.X <- min(eigen(XtX)$values) > 0
   if (!full.X & delta == 0) {delta <- 1}
