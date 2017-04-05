@@ -60,10 +60,12 @@ estRegPars <-function(y, X, delta = 0, XtX = NULL, D = NULL, A = NULL, DXtX = NU
   aa <- sum(3*(diag(XtXDDXtX)*sigma.beta.sq.hat + diag(DXtXD)*sigma.epsi.sq.hat)^2/p)
   bb <- sum(diag(DXtX^4))/p
   kappa.hat <- (mean(b^4) - aa)/(bb*sigma.beta.sq.hat^2)
+  kappa.hat.ub <- (((p + 2)/(p - 1))*(mean(b^4) - 3*p(mean(b^2)^2)(p + 2)))/(sigma.beta.sq.hat^2)
 
   return(list = c("sigma.beta.sq.hat" = sigma.beta.sq.hat,
                   "sigma.epsi.sq.hat" = sigma.epsi.sq.hat,
-                  "kappa.hat" = kappa.hat))
+                  "kappa.hat" = kappa.hat,
+                  "kappa.hat.ub" = kappa.hat.ub))
 
 }
 
