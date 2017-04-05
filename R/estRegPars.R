@@ -7,7 +7,8 @@
 #' @param \code{delta} ridge regression parameter for when X is not full rank
 #' @return Estimates \code{sigma.beta.sq.hat}, \code{sigma.epsi.sq.hat} and \code{kappa.hat}
 #' @export
-estRegPars <-function(y, X, delta = 0, XtX = NULL) {
+estRegPars <-function(y, X, delta = 0, XtX = NULL, D = NULL, A = NULL, DXtX = NULL,
+                      XtXDDXtX = NULL, XD = NULL, DXtXD = NULL, AX = NULL) {
 
 
   p <- ncol(X)
@@ -20,17 +21,30 @@ estRegPars <-function(y, X, delta = 0, XtX = NULL) {
   full.X <- min(eigen(XtX)$values) > 0
   if (!full.X & delta == 0) {delta <- 1}
 
-  D <- solve(XtX + delta^2*diag(p))
-  A <- diag(n) - tcrossprod(tcrossprod(X, D), X)
+  if (is.null(D)) {
+    D <- solve(XtX + delta^2*diag(p))
+  }
+  if (is.null(A)) {
+    A <- diag(n) - tcrossprod(tcrossprod(X, D), X)
+  }
   b <- crossprod(D, crossprod(X, y))
   r <- crossprod(A, y)
 
-  DXtX <- crossprod(D, XtX)
-  XtXDDXtX <- crossprod(DXtX)
-  XD <- tcrossprod(X, D)
-  DXtXD <- crossprod(XD)
-  AX <- crossprod(A, X)
-
+  if (is.null(DXtX)) {
+    DXtX <- crossprod(D, XtX)
+  }
+  if (is.null(XtXDDXtX)) {
+    XtXDDXtX <- crossprod(DXtX)
+  }
+  if (is.null(XD)) {
+    XD <- tcrossprod(X, D)
+  }
+  if (is.null(DXtXD)) {
+    DXtXD <- crossprod(XD)
+  }
+  if (is.null(AX)) {
+    AX <- crossprod(A, X)
+  }
   e.bb <- sum(diag(XtXDDXtX))/p
   e.be <- sum(diag(DXtXD))/p
   e.eb <- sum(diag(crossprod(AX)))/n
