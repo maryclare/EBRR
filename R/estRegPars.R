@@ -16,7 +16,7 @@ estRegPars <-function(y, X, delta = 0) {
   XtX <- crossprod(X)
 
   full.X <- min(eigen(XtX)$values) > 0
-  if (!full & delta == 0) {delta <- 1}
+  if (!full.X & delta == 0) {delta <- 1}
 
   D <- solve(XtX + delta^2*diag(p))
   A <- diag(n) - tcrossprod(tcrossprod(X, D), X)
