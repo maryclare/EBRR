@@ -7,48 +7,53 @@
 #' @param \code{delta} ridge regression parameter for when X is not full rank
 #' @return Estimates \code{sigma.beta.sq.hat}, \code{sigma.epsi.sq.hat} and \code{kappa.hat}
 #' @export
-estRegPars <-function(y, X, delta = 0, XtX = NULL, D = NULL, A = NULL, DXtX = NULL,
-                      XtXDDXtX = NULL, XD = NULL, DXtXD = NULL, AX = NULL) {
+estRegPars <-function(y, X, W = NULL, delta = 0, precomp = NULL) {
 
 
   p <- ncol(X)
   n <- nrow(X)
 
-  if (is.null(XtX)) {
-    XtX <- crossprod(X)
+  if (is.null(W) & is.null(precomp)) {
+    H <- diag(n)
+  } else if (!is.null(W) & is.null(precomp)) {
+    H <- diag(n) - tcrossprod(tcrossprod(W, solve(crossprod(W))),W)
+  } else if (!is.null(precomp)) {
+    H <- precomp[["H"]]
   }
 
-  full.X <- min(eigen(XtX)$values) > 0
-  if (!full.X & delta == 0) {delta <- 1}
+  if (is.null(precomp)) {
+    HX <- crossprod(H, X)
+    XtHX <- crossprod(HX)
+    full.X <- min(eigen(XtHX)$values) > 0
+    if (!full.X & delta == 0) {delta <- 1}
+    D <- solve(XtHX + delta^2*diag(p))
+    A <- diag(n) - tcrossprod(tcrossprod(HX, D), HX)
+    DXtHX <- crossprod(D, XtHX)
+    XtHXDDXtHX <- crossprod(DXtHX)
+    HXD <- tcrossprod(HX, D)
+    DXtHXD <- crossprod(HXD)
+    AHX <- crossprod(A, HX)
+    HA <- crossprod(H, A)
+    XtHAAHX <- crossprod(AHX)
+    AHA <- crossprod(HA)
+  } else {
+    HX <- precomp[["HX"]]
+    D <- precomp[["D"]]
+    A <- precomp[["A"]]
+    DXtHX <- precomp[["DXtHX"]]
+    XtHXDDXtHX <- precomp[["XtHXDDXtHX"]]
+    DXtHXD <- precomp[["DXtHXD"]]
+    XtHAAHX <- precomp[["XtHAAHX"]]
+    AHA <- precomp[["AHA"]]
+  }
 
-  if (is.null(D)) {
-    D <- solve(XtX + delta^2*diag(p))
-  }
-  if (is.null(A)) {
-    A <- diag(n) - tcrossprod(tcrossprod(X, D), X)
-  }
-  b <- crossprod(D, crossprod(X, y))
-  r <- crossprod(A, y)
+  b <- crossprod(D, crossprod(HX, y))
+  r <- crossprod(A, crossprod(H, y))
 
-  if (is.null(DXtX)) {
-    DXtX <- crossprod(D, XtX)
-  }
-  if (is.null(XtXDDXtX)) {
-    XtXDDXtX <- crossprod(DXtX)
-  }
-  if (is.null(XD)) {
-    XD <- tcrossprod(X, D)
-  }
-  if (is.null(DXtXD)) {
-    DXtXD <- crossprod(XD)
-  }
-  if (is.null(AX)) {
-    AX <- crossprod(A, X)
-  }
-  e.bb <- sum(diag(XtXDDXtX))/p
-  e.be <- sum(diag(DXtXD))/p
-  e.eb <- sum(diag(crossprod(AX)))/n
-  e.ee <- sum(diag(crossprod(A)))/n
+  e.bb <- sum(diag(XtHXDDXtHX))/p
+  e.be <- sum(diag(DXtHXD))/p
+  e.eb <- sum(diag(XtHAAHX))/n
+  e.ee <- sum(diag(AHA))/n
 
   E <- rbind(c(e.bb, e.be),
              c(e.eb, e.ee))
@@ -57,8 +62,8 @@ estRegPars <-function(y, X, delta = 0, XtX = NULL, D = NULL, A = NULL, DXtX = NU
   sigma.beta.sq.hat <- sig.2.ests[1]
   sigma.epsi.sq.hat <- sig.2.ests[2]
 
-  aa <- sum(3*(diag(XtXDDXtX)*sigma.beta.sq.hat + diag(DXtXD)*sigma.epsi.sq.hat)^2/p)
-  bb <- sum(diag(DXtX^4))/p
+  aa <- sum(3*(diag(XtHXDDXtHX)*sigma.beta.sq.hat + diag(DXtHXD)*sigma.epsi.sq.hat)^2/p)
+  bb <- sum(diag(DXtHX^4))/p
   kappa.hat <- (mean(b^4) - aa)/(bb*sigma.beta.sq.hat^2)
 
   return(list = c("sigma.beta.sq.hat" = sigma.beta.sq.hat,
