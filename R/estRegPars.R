@@ -91,7 +91,7 @@ estRegPars <-function(y, X, W = NULL, delta = 0, precomp = NULL) {
 
   b <- crossprod(HXD, y)
 
-  naive <- (mean(b^4))/(mean(b^2)^2)
+  test.stat <- (mean(b^4))/(mean(b^2)^2)
 
   kappa.hat <- (alpha.beta^2/gamma.beta)*(test.stat - omega.beta/alpha.beta^2)
   q.hat <- nrq(kappa.hat)
