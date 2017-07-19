@@ -89,8 +89,6 @@ estRegPars <-function(y, X, W = NULL, delta = 0, precomp = NULL) {
   gamma.beta <- sum(diag(DXtHX^4))/p
   omega.beta <- 3*(sum(diag(crossprod(DXtHX)^2)) - sum(diag(DXtHX^4)))/p
 
-  b <- crossprod(HXD, y)
-
   test.stat <- (mean(b^4))/(mean(b^2)^2)
 
   kappa.hat <- (alpha.beta^2/gamma.beta)*(test.stat - omega.beta/alpha.beta^2)
