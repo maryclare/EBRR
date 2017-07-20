@@ -30,7 +30,7 @@ nrq <- function(kurt, sval = 0.032, tol = 10^(-12)) { # This starting value is t
 #' @param \code{delta} ridge regression parameter for when X is not full rank
 #' @return Estimates \code{sigma.beta.sq.hat}, \code{sigma.epsi.sq.hat} and \code{kappa.hat}
 #' @export
-estRegPars <-function(y, X, delta = 0, precomp = NULL, comp.q = FALSE) {
+estRegPars <-function(y, X, delta.sq = 0, precomp = NULL, comp.q = FALSE) {
 
 
   p <- ncol(X)
@@ -38,9 +38,10 @@ estRegPars <-function(y, X, delta = 0, precomp = NULL, comp.q = FALSE) {
 
   if (is.null(precomp)) {
     XtX <- crossprod(X)
-    full.X <- min(eigen(XtX)$values) > 0
-    if (!full.X & delta == 0) {delta <- 1}
-    D <- solve(XtX + delta^2*diag(p))
+    evals <- eigen(XtX)$values
+    full.X <- min(evals) > 0
+    if (!full.X & delta.sq == 0) {delta.sq <- -min(evals) + 1}
+    D <- solve(XtX + delta.sq*diag(p))
     A <- diag(n) - tcrossprod(tcrossprod(X, D), X)
     DXtX <- crossprod(D, XtX)
     XtXDDXtX <- crossprod(DXtX)
