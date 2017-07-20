@@ -45,7 +45,6 @@ estRegPars <-function(y, X, delta.sq = 0, precomp = NULL, comp.q = FALSE) {
     A <- diag(n) - tcrossprod(tcrossprod(X, D), X)
     DXtX <- crossprod(D, XtX)
     XtXDDXtX <- crossprod(DXtX)
-    HD <- tcrossprod(H, D)
     DXtXD <- crossprod(XD)
     AX <- crossprod(A, X)
     XtAAX <- crossprod(AX)
