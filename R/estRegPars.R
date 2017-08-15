@@ -91,7 +91,7 @@ estRegPars <-function(y, X, delta.sq = 0, precomp = NULL, comp.q = FALSE) {
   kappa.hat <- (alpha.beta^2/gamma.beta)*(test.stat - omega.beta/alpha.beta^2)
   q.hat <- ifelse(comp.q, nrq(kappa.hat), NA)
 
-  return(list = c("sigma.beta.sq.hat" = sigma.beta.sq.hat,
+  return(list("sigma.beta.sq.hat" = sigma.beta.sq.hat,
                   "sigma.epsi.sq.hat" = sigma.epsi.sq.hat,
                   "kappa.hat" = kappa.hat,
                   "q.hat" = q.hat,
