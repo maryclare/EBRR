@@ -43,6 +43,9 @@ estRegPars <-function(y, X, delta.sq = 0, precomp = NULL, comp.q = FALSE) {
     V <- diag(sqrt(diag(XtX/C)))
     ceval <- eigen(C)$values
     delta.sq <- max(1 - min(ceval), 0)
+    if (!is.null(delta.sq)) {
+      delta.sq <- delta.sq
+    }
     D.inv <- tcrossprod(crossprod(V, (C + delta.sq*diag(p))), V)
     D <- solve(D.inv)
     A <- diag(n) - tcrossprod(tcrossprod(X, D), X)
