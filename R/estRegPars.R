@@ -38,10 +38,13 @@ estRegPars <-function(y, X, delta.sq = 0, precomp = NULL, comp.q = FALSE) {
 
   if (is.null(precomp)) {
     XtX <- crossprod(X)
-    evals <- eigen(XtX)$values
-    full.X <- min(evals) > 0
-    if (!full.X & delta.sq == 0) {delta.sq <- -min(evals) + 1}
-    D <- solve(XtX + delta.sq*diag(p))
+    XtX <- crossprod(X)
+    C <- cov2cor(XtX)
+    V <- diag(sqrt(diag(XtX/C)))
+    ceval <- eigen(C)$values
+    delta.sq <- max(1 - min(ceval), 0)
+    D.inv <- tcrossprod(crossprod(V, (C + delta.sq*diag(p))), V)
+    D <- solve(D.inv)
     A <- diag(n) - tcrossprod(tcrossprod(X, D), X)
     DXtX <- crossprod(D, XtX)
     XtXDDXtX <- crossprod(DXtX)
