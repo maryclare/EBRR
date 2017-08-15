@@ -95,7 +95,8 @@ estRegPars <-function(y, X, delta.sq = 0, precomp = NULL, comp.q = FALSE) {
                   "sigma.epsi.sq.hat" = sigma.epsi.sq.hat,
                   "kappa.hat" = kappa.hat,
                   "q.hat" = q.hat,
-                  "test.stat" = test.stat))
+                  "test.stat" = test.stat,
+                  "DXtX" = DXtX))
 
 }
 
