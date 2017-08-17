@@ -1,3 +1,34 @@
+# Function for estimating variance parameters from likelihood
+rrmmle<-function(y,X,emu=FALSE,s20=1,t20=1)
+{
+  sX<-svd(X)
+  lX<-sX$d^2
+  tUX<-t(sX$u)
+  xs<-apply(X,1,sum)
+
+  if(nrow(X)>ncol(X))
+  {
+    lX<-c(lX,rep(0,nrow(X)-ncol(X)))
+    tUX<-t(cbind(t(tUX),MASS::Null(sX$u)))
+  }
+
+  objective<-function(ls2t2,emu)
+  {
+    s2<-exp(ls2t2[1]) ; t2<-exp(ls2t2[2])
+    mu<-emu*sum((tUX%*%xs)*(tUX%*%y)/(lX*t2+s2))/sum((tUX%*%xs)^2/(lX*t2+s2))
+    sum(log( lX*t2 + s2 )) + sum( (tUX%*%(y-mu*xs))^2/(lX*t2+s2) )
+  }
+
+  fit<-optim(log(c(s20,t20)),objective,emu=emu, method = "L-BFGS-B")
+  s2<-exp(fit$par[1]) ; t2<-exp(fit$par[2])
+  mu<-emu*sum((tUX%*%xs)*(tUX%*%y)/(lX*t2+s2))/sum((tUX%*%xs)^2/(lX*t2+s2))
+  if (fit$convergence == 0) {
+    return(c(mu,t2,s2))
+  } else {
+    return(rep(NA, 3))
+  }
+}
+
 fq <- function(q, kurt) {
   gamma(5/q)*gamma(1/q)/(gamma(3/q)^2) - kurt
 }
@@ -36,52 +67,45 @@ estRegPars <-function(y, X, delta.sq = NULL, precomp = NULL, comp.q = FALSE) {
   p <- ncol(X)
   n <- nrow(X)
 
-  if (is.null(precomp)) {
-    XtX <- crossprod(X)
-    XtX <- crossprod(X)
-    C <- cov2cor(XtX)
-    V <- diag(sqrt(diag(XtX/C)))
-    ceval <- eigen(C)$values
-    if (!is.null(delta.sq)) {
-      delta.sq <- delta.sq
-    } else {
-      delta.sq <- max(1 - min(ceval), 0)
-    }
-    D.inv <- tcrossprod(crossprod(V, (C + delta.sq*diag(p))), V)
-    D <- solve(D.inv)
-    A <- diag(n) - tcrossprod(tcrossprod(X, D), X)
-    DXtX <- crossprod(D, XtX)
-    XtXDDXtX <- crossprod(DXtX)
-    XD <- crossprod(t(X), D)
-    DXtXD <- crossprod(XD)
-    AX <- crossprod(A, X)
-    XtAAX <- crossprod(AX)
-    AA <- crossprod(A)
+  XtX <- crossprod(X)
+  XtX <- crossprod(X)
+  C <- cov2cor(XtX)
+  V <- diag(sqrt(diag(XtX/C)))
+  ceval <- eigen(C)$values
+  if (!is.null(delta.sq)) {
+    delta.sq <- delta.sq
   } else {
-    X <- precomp[["X"]]
-    D <- precomp[["D"]]
-    A <- precomp[["A"]]
-    DXtX <- precomp[["DXtX"]]
-    XtXDDXtX <- precomp[["XtXDDXtX"]]
-    DXtXD <- precomp[["DXtXD"]]
-    XtAAX <- precomp[["XtAAX"]]
-    AA <- precomp[["AA"]]
+    delta.sq <- max(1 - min(ceval), 0)
   }
+  D.inv <- tcrossprod(crossprod(V, (C + delta.sq*diag(p))), V)
+  D <- solve(D.inv)
+  # A <- diag(n) - tcrossprod(tcrossprod(X, D), X)
+  DXtX <- crossprod(D, XtX)
+  # XtXDDXtX <- crossprod(DXtX)
+  # XD <- crossprod(t(X), D)
+  DXtXD <- crossprod(XD)
+  # AX <- crossprod(A, X)
+  # XtAAX <- crossprod(AX)
+  # AA <- crossprod(A)
 
   b <- crossprod(D, crossprod(X, y))
-  r <- crossprod(A, y)
+  # r <- crossprod(A, y)
+  #
+  # e.bb <- sum(diag(XtXDDXtX))/p
+  # e.be <- sum(diag(DXtXD))/p
+  # e.eb <- sum(diag(XtAAX))/n
+  # e.ee <- sum(diag(AA))/n
+  #
+  # E <- rbind(c(e.bb, e.be),
+  #            c(e.eb, e.ee))
+  #
+  # sig.2.ests <- solve(E)%*%c(mean(b^2), mean(r^2))
+  # sigma.beta.sq.hat <- sig.2.ests[1]
+  # sigma.epsi.sq.hat <- sig.2.ests[2]
 
-  e.bb <- sum(diag(XtXDDXtX))/p
-  e.be <- sum(diag(DXtXD))/p
-  e.eb <- sum(diag(XtAAX))/n
-  e.ee <- sum(diag(AA))/n
-
-  E <- rbind(c(e.bb, e.be),
-             c(e.eb, e.ee))
-
-  sig.2.ests <- solve(E)%*%c(mean(b^2), mean(r^2))
-  sigma.beta.sq.hat <- sig.2.ests[1]
-  sigma.epsi.sq.hat <- sig.2.ests[2]
+  vpars <- rrmmle(y = y, X = X)
+  sigma.beta.sq.hat <- vpars[2]
+  sigma.epsi.sq.hat <- vpars[3]
 
   alpha.beta <- sum(diag(crossprod(DXtX)))/p
   gamma.beta <- sum(diag(DXtX^4))/p
@@ -93,11 +117,12 @@ estRegPars <-function(y, X, delta.sq = NULL, precomp = NULL, comp.q = FALSE) {
   q.hat <- ifelse(comp.q, nrq(kappa.hat), NA)
 
   return(list("sigma.beta.sq.hat" = sigma.beta.sq.hat,
-                  "sigma.epsi.sq.hat" = sigma.epsi.sq.hat,
-                  "kappa.hat" = kappa.hat,
-                  "q.hat" = q.hat,
-                  "test.stat" = test.stat,
-                  "DXtX" = DXtX))
+              "sigma.epsi.sq.hat" = sigma.epsi.sq.hat,
+              "kappa.hat" = kappa.hat,
+              "q.hat" = q.hat,
+              "test.stat" = test.stat,
+              "DXtX" = DXtX,
+              "DXtXD" = DXtXD))
 
 }
 
