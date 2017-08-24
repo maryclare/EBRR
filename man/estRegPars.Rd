@@ -4,7 +4,7 @@
 \alias{estRegPars}
 \title{Function for estimating tuning parameters}
 \usage{
-estRegPars(y, X, delta = 0)
+estRegPars(y, X, delta.sq = NULL, precomp = NULL, comp.q = FALSE)
 }
 \arguments{
 \item{\code{y}}{regression response}

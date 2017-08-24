@@ -38,6 +38,7 @@ fpq <- function(q) {
 }
 
 # Use Newton's method: https://en.wikipedia.org/wiki/Newton%27s_method
+#' @export
 nrq <- function(kurt, sval = 0.032, tol = 10^(-12)) { # This starting value is the lowest possible
   if (kurt < 6) {
     sval <- 1
