@@ -40,6 +40,8 @@ fpq <- function(q) {
 # Use Newton's method: https://en.wikipedia.org/wiki/Newton%27s_method
 #' @export
 nrq <- function(kurt, sval = 0.032, tol = 10^(-12)) { # This starting value is the lowest possible
+  # Kurtosis is bounded below by 1.8, so round if needed
+  kurt <- ifelse(kurt <= 1.8, 1.80001, kurt)
   if (kurt < 6) {
     sval <- 1
   } else if (kurt < 3) {
