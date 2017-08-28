@@ -1,27 +1,26 @@
 # Function for estimating variance parameters from likelihood
-rrmmle<-function(y,X,s20=1,t20=1)
+rrmmle<-function(y,X,emu=FALSE,s20=1,t20=1)
 {
-  sX<-svd(X, nu = nrow(X))
+  sX<-svd(X, nu = nrow(X), nv = ncol(X))
   lX<-sX$d^2
-  UX<- sX$u
+  tUX<-sX$u
   xs<-apply(X,1,sum)
-  
+
   if(nrow(X)>ncol(X))
   {
     lX<-c(lX,rep(0,nrow(X)-ncol(X)))
-  } 
-  
-  
+  }
+
   objective<-function(ls2t2,emu)
   {
     s2<-exp(ls2t2[1]) ; t2<-exp(ls2t2[2])
-    mu<-emu*sum((UX%*%xs)*(UX%*%y)/(lX*t2+s2))/sum((UX%*%xs)^2/(lX*t2+s2))
-    sum(log( lX*t2 + s2 )) + sum( (UX%*%(y-mu*xs))^2/(lX*t2+s2) )
+    mu<-emu*sum((tUX%*%xs)*(tUX%*%y)/(lX*t2+s2))/sum((tUX%*%xs)^2/(lX*t2+s2))
+    sum(log( lX*t2 + s2 )) + sum( (tUX%*%(y-mu*xs))^2/(lX*t2+s2) )
   }
-  
+
   fit<-optim(log(c(s20,t20)),objective,emu=emu, method = "L-BFGS-B")
   s2<-exp(fit$par[1]) ; t2<-exp(fit$par[2])
-  mu<-emu*sum((UX%*%xs)*(UX%*%y)/(lX*t2+s2))/sum((UX%*%xs)^2/(lX*t2+s2))
+  mu<-emu*sum((tUX%*%xs)*(tUX%*%y)/(lX*t2+s2))/sum((tUX%*%xs)^2/(lX*t2+s2))
   if (fit$convergence == 0) {
     return(c(mu,t2,s2))
   } else {
