@@ -3,7 +3,7 @@ rrmmle<-function(y,X,emu=FALSE,s20=1,t20=1)
 {
   sX<-svd(X, nu = nrow(X), nv = ncol(X))
   lX<-sX$d^2
-  tUX<-sX$u
+  tUX<-t(sX$u)
   xs<-apply(X,1,sum)
 
   if(nrow(X)>ncol(X))
