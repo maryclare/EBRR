@@ -15,10 +15,10 @@ rrmmle<-function(y,X,emu=FALSE,s20=1,t20=1)
   {
     s2<-exp(ls2t2[1]) ; t2<-exp(ls2t2[2])
     mu<-emu*sum((tUX%*%xs)*(tUX%*%y)/(lX*t2+s2))/sum((tUX%*%xs)^2/(lX*t2+s2))
-    sum(log( lX*t2 + s2 )) + sum( (tUX%*%(y-mu*xs))^2/(lX*t2+s2) ) # + 1/s2^10 # Keep s2 = 0 from being a mode
+    sum(log( lX*t2 + s2 )) + sum( (tUX%*%(y-mu*xs))^2/(lX*t2+s2) ) + 1/s2^(1/2) # Keep s2 = 0 from being a mode
   }
   # Adding bounds doesn't help enough
-  fit<-optim(log(c(s20,t20)),objective,emu=emu, method = "L-BFGS-B", lower = c(-3, -Inf))
+  fit<-optim(log(c(s20,t20)),objective,emu=emu, method = "L-BFGS-B")
   s2<-exp(fit$par[1]) ; t2<-exp(fit$par[2])
   mu<-emu*sum((tUX%*%xs)*(tUX%*%y)/(lX*t2+s2))/sum((tUX%*%xs)^2/(lX*t2+s2))
   if (fit$convergence == 0) {
