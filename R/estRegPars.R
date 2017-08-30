@@ -40,7 +40,7 @@ fpq <- function(q) {
 #' @export
 nrq <- function(kurt, sval = 0.032, tol = 10^(-12)) { # This starting value is the lowest possible
   # Kurtosis is bounded below by 1.8, so round if needed
-  kurt <- ifelse(kurt <= 1.8, 1.8001, kurt)
+  kurt <- ifelse(kurt <= 1.8, 1.81, kurt)
   # Kurtosis greater than 1.8 gives a q value of 1086.091
   # Value of fpq at q = 1086.091 is about -10^(-8), so the curve *is* pretty flat at this point
   if (kurt < 6) {
