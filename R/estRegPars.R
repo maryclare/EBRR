@@ -17,7 +17,7 @@ rrmmle<-function(y,X,emu=FALSE,s20=1,t20=1)
     mu<-emu*sum((tUX%*%xs)*(tUX%*%y)/(lX*t2+s2))/sum((tUX%*%xs)^2/(lX*t2+s2))
     sum(log( lX*t2 + s2 )) + sum( (tUX%*%(y-mu*xs))^2/(lX*t2+s2) ) # + 1/s2^(1/2) # Could keep s2 = 0 from being a mode but is a pretty artificial fix
   }
-  # Adding bounds doesn't help enough
+  # Adding bounds doesn't help
   fit<-optim(log(c(s20,t20)),objective,emu=emu, method = "L-BFGS-B")
   s2<-exp(fit$par[1]) ; t2<-exp(fit$par[2])
   mu<-emu*sum((tUX%*%xs)*(tUX%*%y)/(lX*t2+s2))/sum((tUX%*%xs)^2/(lX*t2+s2))
@@ -27,119 +27,6 @@ rrmmle<-function(y,X,emu=FALSE,s20=1,t20=1)
     return(rep(NA, 3))
   }
 }
-
-# Nonsense code trying to work things out about the low rank case
-# lik <- function(pars, XXt.val, Uty) {
-#   tau.sq <- exp(pars[1])
-#   sig.sq <- exp(pars[2])
-#   v <- (XXt.val*tau.sq + sig.sq)
-#
-#   as.numeric(sum(log(v)) + sum(Uty^2/(v)))
-# }
-#
-# beta <- sqrt(gamma(1/q.true)/gamma(3/q.true))*rgnorm(p, mu = 0, alpha = 1, beta = q.true)*sqrt(tau.sq.true)
-#
-# y <- X%*%beta + rnorm(n)*sqrt(sig.sq.true)
-# y <- y - mean(y)
-#
-# XXt.val <- svd(X, nu = nrow(X))$d^2
-# Uty <- t(svd(X, nu = nrow(X))$u)%*%y
-#
-# optim(par = rnorm(2), fn = lik, XXt.val = XXt.val, Uty = Uty, method = "BFGS")
-# print(range(Uty^2/XXt.val))
-# range(Uty^2)
-# plot(XXt.val, Uty)
-#
-# lik.rho <- function(pars, XXt.val, Uty, sig.sq) {
-#   rho <- exp(pars[1])
-#   v <- (XXt.val*rho + 1)
-#
-#   as.numeric(sig.sq*(length(v)*log(sig.sq) + sum(log(v))) + sum(Uty^2/(v)))
-# }
-#
-# up.sig <- function(XXt.val, Uty, rho) {
-#   mean(Uty^2/(XXt.val*rho + 1))
-# }
-#
-# alternating <- function(XXt.val, Uty, sig.sq.start = 10, iter = 100) {
-#   pars <- matrix(nrow = iter + 1, ncol = 3)
-#   pars[1, 1] <- sig.sq.start
-#   for (i in 2:(iter + 1)) {
-#   opt <- optim(par = rnorm(1),
-#                fn = lik.rho, XXt.val = XXt.val, Uty = Uty, sig.sq = pars[i - 1, 1], method = "BFGS")
-#   pars[i, 2] <- ifelse(opt$convergence == 0, exp(opt$par[1]), NA)
-#   pars[i, 1] <- up.sig(XXt.val, Uty, pars[i, 2])
-#   }
-#   pars <- pars[-1, ]
-#
-# }
-#
-#
-
-# tau.sqs <- seq(0.7, 1.3, length.out = 100)
-# sig.sqs <- seq(0.001, 1, length.out = 100)
-# vals <- matrix(nrow = length(tau.sqs), ncol = length(sig.sqs))
-# for (i in 1:length(tau.sqs)) {
-#   for (j in 1:length(sig.sqs)) {
-#     v <- (XXt.val*tau.sqs[i] + sig.sqs[j])
-#     vals[i, j] <- as.numeric(sum(log(v)) + sum(Uty^2/v))
-#   }
-# }
-#
-# contour(x = tau.sqs,
-#         y = sig.sqs,
-#         z = log(vals), xlab = expression(tau^2), ylab = expression(sigma^2), nlevels = 100)
-# image(x = tau.sqs,
-#         y = sig.sqs,
-#         z = log(vals), xlab = expression(tau^2), ylab = expression(sigma^2))
-#
-# # vals[r.l < rhos & rhos < r.h, s.l < sig.sqs & sig.sqs < s.h],
-# # xlab = expression(rho), ylab = expression(sigma^2)
-#
-# sig.sqs <- seq(0.25, 1.5, length.out = 5)
-# rhos <- seq(0.5, 2, length.out = 1000)
-# vals <- matrix(nrow = length(rhos), ncol = length(sig.sqs))
-# for (i in 1:length(rhos)) {
-#   for (j in 1:length(sig.sqs)) {
-#     v <- sig.sqs[j]*(XXt.val*rhos[i] + 1)
-#     vals[i, j] <- as.numeric(sum(log(v)) + sum(Uty^2/v))
-#   }
-# }
-# plot(rhos, vals[, 1], ylim = range(vals), type = "l")
-# for (j in 2:length(sig.sqs)) {
-#   lines(rhos, vals[, j], lty = j)
-# }
-# legend("topright", lty = 1:length(sig.sqs), legend = sig.sqs)
-#
-# sig.sqs <- seq(10^(-37), 10^(-35), length.out = 1000)
-# rhos <- seq(6.940486e+35, 6.940486e+35, length.out = 1)
-# vals <- matrix(nrow = length(rhos), ncol = length(sig.sqs))
-# for (i in 1:length(rhos)) {
-#   for (j in 1:length(sig.sqs)) {
-#     v <- sig.sqs[j]*(XXt.val*rhos[i] + 1)
-#     vals[i, j] <- as.numeric(sum(log(v)) + sum(Uty^2/v))
-#   }
-# }
-# plot(sig.sqs, vals[1, ], ylim = range(vals), type = "l")
-# for (j in 2:length(rhos)) {
-#   lines(sig.sqs, vals[j, ], lty = j)
-# }
-# legend("topright", lty = 1:length(rhos), legend = rhos)
-# lik.grad <- function(pars, XXt.val, Uty) {
-#   tau.sq <- exp(pars[1])
-#   sig.sq <- exp(pars[2])
-#   v <- XXt.val*tau.sq + sig.sq
-#
-#   c(as.numeric(sum(XXt.val/v) - sum(Uty^2*XXt.val/v^2)),
-#     as.numeric(sum(1/v) - sum(Uty^2/v^2)))
-# }
-#
-#
-# exp(optim(par = rnorm(2), fn = lik, XXt.val = XXt.val, Uty = Uty,
-#       method = "BFGS")$par)
-#
-# test <- c(as.numeric(-sum(XXt.val^2/v^2) + 2*sum(Uty^2*XXt.val^2/v^3)),
-#           as.numeric(-sum(1/v^2) + 2*sum(Uty^2/v^3)))
 
 fq <- function(q, kurt) {
   gamma(5/q)*gamma(1/q)/(gamma(3/q)^2) - kurt
