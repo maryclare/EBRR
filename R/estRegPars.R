@@ -15,7 +15,7 @@ rrmmle<-function(y,X,emu=FALSE,s20=1,t20=1)
   {
     s2<-exp(ls2t2[1]) ; t2<-exp(ls2t2[2])
     mu<-emu*sum((tUX%*%xs)*(tUX%*%y)/(lX*t2+s2))/sum((tUX%*%xs)^2/(lX*t2+s2))
-    sum(log( lX*t2 + s2 )) + sum( (tUX%*%(y-mu*xs))^2/(lX*t2+s2) ) + 1/s2^(1/2) # Keep s2 = 0 from being a mode
+    sum(log( lX*t2 + s2 )) + sum( (tUX%*%(y-mu*xs))^2/(lX*t2+s2) ) # + 1/s2^(1/2) # Could keep s2 = 0 from being a mode but is a pretty artificial fix
   }
   # Adding bounds doesn't help enough
   fit<-optim(log(c(s20,t20)),objective,emu=emu, method = "L-BFGS-B")
@@ -27,17 +27,28 @@ rrmmle<-function(y,X,emu=FALSE,s20=1,t20=1)
     return(rep(NA, 3))
   }
 }
-#
+
+# Nonsense code trying to work things out about the low rank case
 # lik <- function(pars, XXt.val, Uty) {
-#   rho <- exp(pars[1])
+#   tau.sq <- exp(pars[1])
 #   sig.sq <- exp(pars[2])
-#   v <- (XXt.val*rho + 1)
+#   v <- (XXt.val*tau.sq + sig.sq)
 #
-#   as.numeric(sig.sq*(length(v)*log(sig.sq) + sum(log(v))) + sum(Uty^2/(v))) + 1/sig.sq
+#   as.numeric(sum(log(v)) + sum(Uty^2/(v)))
 # }
+#
+# beta <- sqrt(gamma(1/q.true)/gamma(3/q.true))*rgnorm(p, mu = 0, alpha = 1, beta = q.true)*sqrt(tau.sq.true)
+#
+# y <- X%*%beta + rnorm(n)*sqrt(sig.sq.true)
+# y <- y - mean(y)
 #
 # XXt.val <- svd(X, nu = nrow(X))$d^2
 # Uty <- t(svd(X, nu = nrow(X))$u)%*%y
+#
+# optim(par = rnorm(2), fn = lik, XXt.val = XXt.val, Uty = Uty, method = "BFGS")
+# print(range(Uty^2/XXt.val))
+# range(Uty^2)
+# plot(XXt.val, Uty)
 #
 # lik.rho <- function(pars, XXt.val, Uty, sig.sq) {
 #   rho <- exp(pars[1])
@@ -64,8 +75,29 @@ rrmmle<-function(y,X,emu=FALSE,s20=1,t20=1)
 # }
 #
 #
-# sig.sqs <- seq(0.0001, 0.0025, length.out = 5)
-# rhos <- seq(0.5, 10, length.out = 1000)
+
+# tau.sqs <- seq(0.7, 1.3, length.out = 100)
+# sig.sqs <- seq(0.001, 1, length.out = 100)
+# vals <- matrix(nrow = length(tau.sqs), ncol = length(sig.sqs))
+# for (i in 1:length(tau.sqs)) {
+#   for (j in 1:length(sig.sqs)) {
+#     v <- (XXt.val*tau.sqs[i] + sig.sqs[j])
+#     vals[i, j] <- as.numeric(sum(log(v)) + sum(Uty^2/v))
+#   }
+# }
+#
+# contour(x = tau.sqs,
+#         y = sig.sqs,
+#         z = log(vals), xlab = expression(tau^2), ylab = expression(sigma^2), nlevels = 100)
+# image(x = tau.sqs,
+#         y = sig.sqs,
+#         z = log(vals), xlab = expression(tau^2), ylab = expression(sigma^2))
+#
+# # vals[r.l < rhos & rhos < r.h, s.l < sig.sqs & sig.sqs < s.h],
+# # xlab = expression(rho), ylab = expression(sigma^2)
+#
+# sig.sqs <- seq(0.25, 1.5, length.out = 5)
+# rhos <- seq(0.5, 2, length.out = 1000)
 # vals <- matrix(nrow = length(rhos), ncol = length(sig.sqs))
 # for (i in 1:length(rhos)) {
 #   for (j in 1:length(sig.sqs)) {
@@ -146,7 +178,7 @@ nrq <- function(kurt, sval = 0.032, tol = 10^(-12)) { # This starting value is t
 #' @param \code{delta} ridge regression parameter for when X is not full rank
 #' @return Estimates \code{sigma.beta.sq.hat}, \code{sigma.epsi.sq.hat} and \code{kappa.hat}
 #' @export
-estRegPars <-function(y, X, delta.sq = NULL, precomp = NULL, comp.q = FALSE) {
+estRegPars <-function(y, X, delta.sq = NULL, precomp = NULL, comp.q = FALSE, mom = FALSE) {
 
 
   p <- ncol(X)
@@ -164,33 +196,39 @@ estRegPars <-function(y, X, delta.sq = NULL, precomp = NULL, comp.q = FALSE) {
   }
   D.inv <- tcrossprod(crossprod(V, (C + delta.sq*diag(p))), V)
   D <- solve(D.inv)
-  # A <- diag(n) - tcrossprod(tcrossprod(X, D), X)
   DXtX <- crossprod(D, XtX)
-  # XtXDDXtX <- crossprod(DXtX)
   XD <- crossprod(t(X), D)
   DXtXD <- crossprod(XD)
-  # AX <- crossprod(A, X)
-  # XtAAX <- crossprod(AX)
-  # AA <- crossprod(A)
 
   b <- crossprod(D, crossprod(X, y))
-  # r <- crossprod(A, y)
-  #
-  # e.bb <- sum(diag(XtXDDXtX))/p
-  # e.be <- sum(diag(DXtXD))/p
-  # e.eb <- sum(diag(XtAAX))/n
-  # e.ee <- sum(diag(AA))/n
-  #
-  # E <- rbind(c(e.bb, e.be),
-  #            c(e.eb, e.ee))
-  #
-  # sig.2.ests <- solve(E)%*%c(mean(b^2), mean(r^2))
-  # sigma.beta.sq.hat <- sig.2.ests[1]
-  # sigma.epsi.sq.hat <- sig.2.ests[2]
 
-  vpars <- rrmmle(y = y, X = X)
-  sigma.beta.sq.hat <- vpars[2]
-  sigma.epsi.sq.hat <- vpars[3]
+  if (mom) {
+    A <- diag(n) - tcrossprod(tcrossprod(X, D), X)
+    XtXDDXtX <- crossprod(DXtX)
+    AX <- crossprod(A, X)
+    XtAAX <- crossprod(AX)
+    AA <- crossprod(A)
+
+    r <- crossprod(A, y)
+
+    e.bb <- sum(diag(XtXDDXtX))/p
+    e.be <- sum(diag(DXtXD))/p
+    e.eb <- sum(diag(XtAAX))/n
+    e.ee <- sum(diag(AA))/n
+
+    E <- rbind(c(e.bb, e.be),
+               c(e.eb, e.ee))
+
+    sig.2.ests <- solve(E)%*%c(mean(b^2), mean(r^2))
+    sigma.beta.sq.hat <- sig.2.ests[1]
+    sigma.epsi.sq.hat <- sig.2.ests[2]
+
+  } else {
+    vpars <- rrmmle(y = y, X = X)
+    sigma.beta.sq.hat <- vpars[2]
+    sigma.epsi.sq.hat <- vpars[3]
+  }
+
 
   alpha.beta <- sum(diag(crossprod(DXtX)))/p
   gamma.beta <- sum(diag(DXtX^4))/p
