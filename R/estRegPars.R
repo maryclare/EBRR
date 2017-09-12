@@ -138,7 +138,8 @@ estRegPars <-function(y, X, delta.sq = NULL, precomp = NULL, comp.q = FALSE, mom
               "q.hat" = q.hat,
               "test.stat" = test.stat,
               "DXtX" = DXtX,
-              "DXtXD" = DXtXD))
+              "DXtXD" = DXtXD,
+              "delta.sq" = delta.sq))
 
 }
 
