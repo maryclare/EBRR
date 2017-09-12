@@ -11,19 +11,20 @@ rrmmle<-function(y,X,emu=FALSE,s20=1,t20=1)
     lX<-c(lX,rep(0,nrow(X)-ncol(X)))
   }
 
-  objective<-function(ls2t2,emu)
+  objective<-function(ls2t2,emu, lX, xs, tUX, y)
   {
     s2<-exp(ls2t2[1]) ; t2<-exp(ls2t2[2])
     mu<-emu*sum((tUX%*%xs)*(tUX%*%y)/(lX*t2+s2))/sum((tUX%*%xs)^2/(lX*t2+s2))
-    ev <- log( lX*t2 + s2 )
-    lev <- log(ev)
-    lev[is.na(lev)] <- 0
-    squares <- (tUX%*%(y-mu*xs))^2/ev
+    ev <- lX*t2 + s2
+    lev <- log(ifelse(ev > 10^(-28), ev, 1))
+    squares <- ifelse(ev > 10^(-28), (tUX%*%(y-mu*xs))^2/ev, 0)
     squares[is.na(squares) | is.infinite(squares)] <- 0
     sum(lev) + sum(squares) # + 1/s2^(1/2) # Could keep s2 = 0 from being a mode but is a pretty artificial fix
+    
   }
   # Adding bounds doesn't help
-  fit<-optim(log(c(s20,t20)),objective,emu=emu, method = "L-BFGS-B")
+  fit<-optim(log(c(s20,t20)),objective,emu=emu, method = "L-BFGS-B", lX = lX,
+             xs = xs, tUX = tUX, y = y)
   s2<-exp(fit$par[1]) ; t2<-exp(fit$par[2])
   mu<-emu*sum((tUX%*%xs)*(tUX%*%y)/(lX*t2+s2))/sum((tUX%*%xs)^2/(lX*t2+s2))
   if (fit$convergence == 0) {
