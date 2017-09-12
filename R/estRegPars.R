@@ -15,7 +15,12 @@ rrmmle<-function(y,X,emu=FALSE,s20=1,t20=1)
   {
     s2<-exp(ls2t2[1]) ; t2<-exp(ls2t2[2])
     mu<-emu*sum((tUX%*%xs)*(tUX%*%y)/(lX*t2+s2))/sum((tUX%*%xs)^2/(lX*t2+s2))
-    sum(log( lX*t2 + s2 )) + sum( (tUX%*%(y-mu*xs))^2/(lX*t2+s2) ) # + 1/s2^(1/2) # Could keep s2 = 0 from being a mode but is a pretty artificial fix
+    ev <- log( lX*t2 + s2 )
+    lev <- log(ev)
+    lev[is.na(lev)] <- 0
+    squares <- (tUX%*%(y-mu*xs))^2/ev
+    squares[is.na(squares) | is.infinite(squares)] <- 0
+    sum(lev) + sum(squares) # + 1/s2^(1/2) # Could keep s2 = 0 from being a mode but is a pretty artificial fix
   }
   # Adding bounds doesn't help
   fit<-optim(log(c(s20,t20)),objective,emu=emu, method = "L-BFGS-B")
