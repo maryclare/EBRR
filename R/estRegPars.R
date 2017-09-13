@@ -19,15 +19,16 @@ rrmmle<-function(y,X,emu=FALSE,s20=1,t20=1)
     lev <- log(ifelse(ev > 10^(-300), ev, 1))
     squares <- ifelse(is.infinite((tUX%*%(y-mu*xs))^2/ev), 10^(300),
                       (tUX%*%(y-mu*xs))^2/ev)
-    cat("s2=", s2, " t2=", s2, "\n")
-    cat("slev=", sum(lev), " ssquares=", sum(squares), "\n")
+    # Useful cat statements for debugging
+    # cat("s2=", s2, " t2=", s2, "\n")
+    # cat("slev=", sum(lev), " ssquares=", sum(squares), "\n")
     sum(lev) + sum(squares) # + 1/s2^(1/2) # Could keep s2 = 0 from being a mode but is a pretty artificial fix
 
   }
-  
-  
-  # I include an upper bound to keep this from misbehaving, sometimes when 
-  # s2 and t2 get really small, the gradient goes crazy and a huge 
+
+
+  # I include an upper bound to keep this from misbehaving, sometimes when
+  # s2 and t2 get really small, the gradient goes crazy and a huge
   # value of s2 and t2 can get suggested
   fit<-optim(log(c(s20,t20)),objective,emu=emu, method = "L-BFGS-B", lX = lX,
              xs = xs, tUX = tUX, y = y, upper = rep(log(10^(30)), 2))
