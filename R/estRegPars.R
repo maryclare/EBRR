@@ -78,13 +78,12 @@ nrq <- function(kurt, sval = 0.032, tol = 10^(-12)) { # This starting value is t
 #' @param \code{delta} ridge regression parameter for when X is not full rank
 #' @return Estimates \code{sigma.beta.sq.hat}, \code{sigma.epsi.sq.hat} and \code{kappa.hat}
 #' @export
-estRegPars <-function(y, X, delta.sq = NULL, precomp = NULL, comp.q = FALSE, mom = FALSE) {
+estRegPars <-function(y, X, delta.sq = NULL, precomp = NULL, comp.q = FALSE, mom = TRUE) {
 
 
   p <- ncol(X)
   n <- nrow(X)
 
-  XtX <- crossprod(X)
   XtX <- crossprod(X)
   C <- cov2cor(XtX)
   V <- diag(sqrt(diag(XtX/C)))
@@ -103,23 +102,20 @@ estRegPars <-function(y, X, delta.sq = NULL, precomp = NULL, comp.q = FALSE, mom
   b <- crossprod(D, crossprod(X, y))
 
   if (mom) {
-    A <- diag(n) - tcrossprod(tcrossprod(X, D), X)
-    XtXDDXtX <- crossprod(DXtX)
-    AX <- crossprod(A, X)
-    XtAAX <- crossprod(AX)
-    AA <- crossprod(A)
-
-    r <- crossprod(A, y)
-
-    e.bb <- sum(diag(XtXDDXtX))/p
-    e.be <- sum(diag(DXtXD))/p
-    e.eb <- sum(diag(XtAAX))/n
-    e.ee <- sum(diag(AA))/n
-
-    E <- rbind(c(e.bb, e.be),
-               c(e.eb, e.ee))
-
-    sig.2.ests <- solve(E)%*%c(mean(b^2), mean(r^2))
+    
+    XXt <- tcrossprod(X)
+    XXt.eig <- eigen(XXt)
+    XXt.val <- XXt.eig$values
+    XXt.vec <- XXt.eig$vectors
+    A <- diag(n)
+    B <- tcrossprod(tcrossprod(XXt.vec, diag(ifelse(XXt.val > 1, 1/XXt.val, 0))), XXt.vec)
+    
+    E <- rbind(c(sum(diag(crossprod(t(XXt), A))), sum(diag(A))), 
+               c(sum(diag(B)), sum(diag(crossprod(t(XXt), B)))))
+    
+    sig.2.ests <- solve(E)%*%matrix(c(crossprod(y, crossprod(t(A), y)), 
+                                      crossprod(y, crossprod(t(B), y))), nrow = 2, ncol = 1)
+    
     sigma.beta.sq.hat <- sig.2.ests[1]
     sigma.epsi.sq.hat <- sig.2.ests[2]
 
