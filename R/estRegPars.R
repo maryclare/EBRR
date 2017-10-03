@@ -111,7 +111,7 @@ estRegPars <-function(y, X, delta.sq = NULL, precomp = NULL, comp.q = FALSE, mom
     B <- tcrossprod(tcrossprod(XXt.vec, diag(ifelse(XXt.val > 1, 1/XXt.val, 0))), XXt.vec)
     
     E <- rbind(c(sum(diag(crossprod(t(XXt), A))), sum(diag(A))), 
-               c(sum(diag(B)), sum(diag(crossprod(t(XXt), B)))))
+               c(sum(diag(crossprod(t(XXt), B))), sum(diag(B))))
     
     sig.2.ests <- solve(E)%*%matrix(c(crossprod(y, crossprod(t(A), y)), 
                                       crossprod(y, crossprod(t(B), y))), nrow = 2, ncol = 1)
